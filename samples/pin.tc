@@ -1,0 +1,12 @@
+use "stdlib/io.tc"
+
+void fn main: {
+    i32 x = 10
+    {
+        pin x
+
+        x = 11
+    }
+    x = 12
+    printi(x)
+}

@@ -6,6 +6,13 @@ void fn loops: {
         i -= 1
         printi(i)
     }
+    loop {
+        if (i == 100){
+            break
+        }
+        printi(i)
+        i += 1
+    }
 }
 
 void fn main: {

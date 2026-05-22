@@ -38,3 +38,16 @@ For this we specify with @
 
 this inlines a .tc file declarations at compile time, no .h file needed.
 
+# match statement
+
+match(value){
+    0 = {
+        print("zero")
+    }
+    1 = {
+        print("one")
+    }
+    _ = {
+        print("other")
+    }
+}

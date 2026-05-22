@@ -5,6 +5,6 @@ void fn main: {
     printi(x)
     pin x
 
-    x = 11 // this should be illegal since x is pinned
+    x = 11 // this should be illegal since x is pinned in this scope
     printi(x)
 }

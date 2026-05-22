@@ -1,7 +1,6 @@
 
 use "stdlib/io.tc"
-@use "utils.tc" 
-
+@use "utils.tc"  // inlines lib at compile time
 
 i32 fn main: {
     printi(add(1, 2))

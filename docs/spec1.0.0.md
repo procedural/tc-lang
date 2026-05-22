@@ -9,9 +9,9 @@ Rules:
     - No safety, but defer included
     - No inference, everything is explicit
     - No shadowing, pick names well
-    - No OOP, imperative procedural
-    - No indentation, braces
-    - No aliasings to avoid bugs
+    - No OOP, imperative procedural instead
+    - No indentation, braces only
+    - No & C++ style aliasings to avoid bugs
     - No string type, C like strings
     - Math built in
     and: &, or: |, xor: ^, not: !, shl: <<, shr: >>
@@ -25,9 +25,19 @@ Rules:
     - Uninitalized arrays default to 0
     - Manual scopes
     - Functions return only one value
+    - No integer promotion
 
     Overflow semantics:
     1111 << 1 = 1110 (wraps)
+    u8 x = 255
+    x++ // wraps to 0
+    - Explicit casts
+        This is not allowed:
+            i32 x = 10.4 (NO)
+            i32 x = cast(i32, 10.4) (YES)
+        if decimal part is <0.5 it floors to lower value
+        if decimal part is >0.5 it cealings to upper value
+    
 
 # Features for v1.0.0 only
     1. Variables

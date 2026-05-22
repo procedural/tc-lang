@@ -1,0 +1,19 @@
+use "stdlib/io.tc"
+
+void fn print_slice: =>i32 s {
+    i32 i = 0
+    loop if (i < s.len) {
+        printin(s.ptr[i])
+        printn(" ")
+        i++
+    }
+    printn("\n")
+}
+
+i32 fn main: {
+    i32[7] arr = {10, 20, 30, 40, 50, 60, 70}
+    =>i32 slice = arr[1:4]
+    print_slice(slice)
+    printi(slice.len)
+    ret 0
+}

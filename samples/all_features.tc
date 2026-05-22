@@ -1,0 +1,112 @@
+use "stdlib/io.tc"
+
+// Struct declaration
+struct Point {
+    i32 x,
+    i32 y
+}
+
+// Function using struct
+i32 fn manhattan: Point p {
+    i32 ax = p.x
+    i32 ay = p.y
+    if (ax < 0) { ax = 0 - ax }
+    if (ay < 0) { ay = 0 - ay }
+    ret ax + ay
+}
+
+// Demonstrate alloc/free with defer
+void fn heap_test: {
+    ->i32 arr = alloc(i32, 10)
+    defer { free(arr) }
+    i32 i = 0
+    loop if (i < 10) {
+        arr[i] = i * i
+        i++
+    }
+    printi(arr[9])
+}
+
+// Fixed size arrays
+void fn array_test: {
+    i32[5] nums = {10, 20, 30, 40, 50}
+    i32 i = 0
+    loop if (i < 5) {
+        printin(nums[i])
+        printn(" ")
+        i++
+    }
+    printn("\n")
+}
+
+// Raw pointers
+void fn ptr_test: {
+    i32 x = 42
+    ->i32 p = @x
+    ->p = 99
+    printi(x)
+}
+
+// Cast builtin
+void fn cast_test: {
+    f64 pi = 3.14
+    i32 truncated = cast(pi, i32)
+    printi(truncated)
+}
+
+// Postfix increment/decrement
+void fn postfix_test: {
+    i32 x = 5
+    printi(x++)
+    printi(x)
+    printi(x--)
+    printi(x)
+}
+
+// Pin test
+void fn pin_test: {
+    i32 x = 100
+    pin x
+    printi(x)
+}
+
+// Scopes
+void fn scope_test: {
+    i32 a = 1
+    {
+        i32 b = 2
+        printi(a + b)
+    }
+    printi(a)
+}
+
+i32 fn main: {
+    print("=== structs ===")
+    Point pt
+    pt.x = 3
+    pt.y = -4
+    printi(manhattan(pt))
+
+    print("=== heap+defer ===")
+    heap_test()
+
+    print("=== arrays ===")
+    array_test()
+
+    print("=== raw pointers ===")
+    ptr_test()
+
+    print("=== cast ===")
+    cast_test()
+
+    print("=== postfix ===")
+    postfix_test()
+
+    print("=== pin ===")
+    pin_test()
+
+    print("=== scopes ===")
+    scope_test()
+
+    ret 0
+}

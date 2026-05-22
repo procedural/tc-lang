@@ -1,0 +1,16 @@
+use "stdlib/io.tc"
+
+void fn foo: {
+  print("foo")
+}
+
+i32 fn bar: i32 x {
+    ret x + 1
+}
+void fn main: {
+    foo()
+    {
+        i32 x 
+    }
+    bar(x) // error, x is not defined in this scope
+}

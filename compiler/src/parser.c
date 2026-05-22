@@ -97,8 +97,16 @@ static Expr *parse_primary(Parser *p) {
         if (match(p, "(")) {
             Expr *e = new_expr(EX_CALL);
             e->text = t->text;
+            bool is_builtin = !strcmp(t->text, "cast") || !strcmp(t->text, "alloc") || !strcmp(t->text, "sizeof");
+            int argn = 0;
             while (!match(p, ")")) {
-                if (is_type_name(cur(p)->text)) {
+                bool expect_type = false;
+                if (is_builtin) {
+                    if (!strcmp(t->text, "cast") && argn == 1) expect_type = true;
+                    if (!strcmp(t->text, "alloc") && argn == 0) expect_type = true;
+                    if (!strcmp(t->text, "sizeof") && argn == 0) expect_type = true;
+                }
+                if (expect_type || (is_builtin && (is_type_name(cur(p)->text) || at(p, "->") || at(p, "=>")))) {
                     Expr *arg = new_expr(EX_TYPE);
                     arg->type = parse_type(p);
                     expr_push(&e->args, arg);
@@ -106,6 +114,7 @@ static Expr *parse_primary(Parser *p) {
                     expr_push(&e->args, parse_expr(p));
                 }
                 match(p, ",");
+                argn++;
             }
             return e;
         }
@@ -149,6 +158,20 @@ static Expr *parse_postfix(Parser *p) {
             field->left = e;
             field->text = expect_ident(p);
             e = field;
+            continue;
+        }
+        if (match(p, "++")) {
+            Expr *inc = new_expr(EX_UNARY);
+            inc->text = "p++";
+            inc->left = e;
+            e = inc;
+            continue;
+        }
+        if (match(p, "--")) {
+            Expr *dec = new_expr(EX_UNARY);
+            dec->text = "p--";
+            dec->left = e;
+            e = dec;
             continue;
         }
         break;

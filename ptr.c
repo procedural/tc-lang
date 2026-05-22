@@ -5,21 +5,16 @@
 #include <string.h>
 #define TC_ALLOC(type, count) ((type *)calloc((count), sizeof(type)))
 #define TC_LENOF(x) (sizeof(x) / sizeof((x)[0]))
-#define TC_FAT_LENOF(x) ((x).len)
 
-#include "stdlib/io.h"
-void loops(void);
+void foo(void);
 void main(void);
 
 
-void loops(void) {
-    int32_t i = 10;
-    while ((i > 0)) {
-        (i -= 1);
-        printi(i);
-    }
+void foo(void) {
+    int32_t x = 10;
+    int32_t *ptr = (&x);
 }
 
 void main(void) {
-    loops();
+    foo();
 }

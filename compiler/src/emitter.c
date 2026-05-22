@@ -10,6 +10,12 @@ static bool struct_exists(DeclVec *program, const char *name) {
     return false;
 }
 
+static const char *fat_type_tag(Type *inner) {
+    if (inner->kind == TY_NAME) return inner->name;
+    if (inner->kind == TY_RAWPTR) return "ptr";
+    return "x";
+}
+
 static void emit_expr(Str *out, Expr *e, DeclVec *program);
 
 static void emit_type(Str *out, Type *t, const char *name, DeclVec *program) {
@@ -20,9 +26,8 @@ static void emit_type(Str *out, Type *t, const char *name, DeclVec *program) {
         return;
     }
     if (t->kind == TY_FATPTR) {
-        Str base = {0};
-        emit_type(&base, t->inner, "", program);
-        str_printf(out, "struct { %s *ptr; size_t len; } %s", base.data, name ? name : "");
+        str_printf(out, "tc_fat_%s", fat_type_tag(t->inner));
+        if (name && name[0]) str_printf(out, " %s", name);
         return;
     }
     if (t->kind == TY_ARRAY) {
@@ -63,7 +68,9 @@ static void emit_expr(Str *out, Expr *e, DeclVec *program) {
             str_add(out, "("); emit_expr(out, e->left, program); str_printf(out, " %s ", !strcmp(e->text, "<>") ? "!=" : e->text); emit_expr(out, e->right, program); str_add(out, ")");
             break;
         case EX_UNARY:
-            str_printf(out, "(%s", !strcmp(e->text, "->") ? "*" : !strcmp(e->text, "@") ? "&" : e->text); emit_expr(out, e->left, program); str_add(out, ")");
+            if (!strcmp(e->text, "p++")) { str_add(out, "("); emit_expr(out, e->left, program); str_add(out, "++)"); }
+            else if (!strcmp(e->text, "p--")) { str_add(out, "("); emit_expr(out, e->left, program); str_add(out, "--)"); }
+            else { str_printf(out, "(%s", !strcmp(e->text, "->") ? "*" : !strcmp(e->text, "@") ? "&" : e->text); emit_expr(out, e->left, program); str_add(out, ")"); }
             break;
         case EX_CALL:
             if (!strcmp(e->text, "sizeof") && e->args.count == 1 && e->args.items[0]->kind == EX_TYPE) {
@@ -74,13 +81,25 @@ static void emit_expr(Str *out, Expr *e, DeclVec *program) {
                 str_add(out, "TC_ALLOC("); emit_type(out, e->args.items[0]->type, "", program); str_add(out, ", "); emit_expr(out, e->args.items[1], program); str_add(out, ")");
                 break;
             }
+            if (!strcmp(e->text, "cast") && e->args.count == 2 && e->args.items[1]->kind == EX_TYPE) {
+                str_add(out, "(("); emit_type(out, e->args.items[1]->type, "", program); str_add(out, ")("); emit_expr(out, e->args.items[0], program); str_add(out, "))");
+                break;
+            }
+            if (!strcmp(e->text, "free") && e->args.count == 1) {
+                str_add(out, "free("); emit_expr(out, e->args.items[0], program); str_add(out, ")");
+                break;
+            }
+            if (!strcmp(e->text, "lenof") && e->args.count == 1) {
+                str_add(out, "TC_LENOF("); emit_expr(out, e->args.items[0], program); str_add(out, ")");
+                break;
+            }
             str_printf(out, "%s(", e->text);
             for (int i = 0; i < e->args.count; i++) { if (i) str_add(out, ", "); emit_expr(out, e->args.items[i], program); }
             str_add(out, ")");
             break;
         case EX_INDEX: emit_expr(out, e->left, program); str_add(out, "["); emit_expr(out, e->right, program); str_add(out, "]"); break;
         case EX_FIELD: emit_expr(out, e->left, program); str_printf(out, ".%s", e->text); break;
-        case EX_SLICE: str_add(out, "{ &"); emit_expr(out, e->left, program); str_add(out, "["); emit_expr(out, e->right, program); str_add(out, "], ("); emit_expr(out, e->third, program); str_add(out, " - "); emit_expr(out, e->right, program); str_add(out, ") }"); break;
+        case EX_SLICE: str_add(out, "{ .ptr = &"); emit_expr(out, e->left, program); str_add(out, "["); emit_expr(out, e->right, program); str_add(out, "], .len = ("); emit_expr(out, e->third, program); str_add(out, " - "); emit_expr(out, e->right, program); str_add(out, ") }"); break;
         case EX_INIT_LIST:
             str_add(out, "{");
             for (int i = 0; i < e->args.count; i++) { if (i) str_add(out, ", "); emit_expr(out, e->args.items[i], program); }
@@ -136,9 +155,59 @@ static void emit_stmt_vec(Str *out, StmtVec *body, DeclVec *program, int indent)
     for (int i = 0; i < body->count; i++) if (body->items[i]->kind != ST_DEFER) emit_stmt(out, body->items[i], body, program, indent);
 }
 
+static void emit_stmt_vec_with_defers(Str *out, StmtVec *body, DeclVec *program, int indent) {
+    for (int i = 0; i < body->count; i++) if (body->items[i]->kind != ST_DEFER) emit_stmt(out, body->items[i], body, program, indent);
+    emit_defers(out, body, program, indent);
+}
+
+static void collect_fat_types(Type *t, Str *out, DeclVec *program, char **seen, int *seen_count) {
+    if (!t) return;
+    if (t->kind == TY_FATPTR) {
+        const char *tag = fat_type_tag(t->inner);
+        for (int i = 0; i < *seen_count; i++) if (!strcmp(seen[i], tag)) return;
+        seen[*seen_count] = xstrdup(tag);
+        (*seen_count)++;
+        Str base = {0};
+        emit_type(&base, t->inner, "", program);
+        str_printf(out, "typedef struct { %s *ptr; size_t len; } tc_fat_%s;\n", base.data, tag);
+        collect_fat_types(t->inner, out, program, seen, seen_count);
+    } else if (t->kind == TY_RAWPTR || t->kind == TY_ARRAY) {
+        collect_fat_types(t->inner, out, program, seen, seen_count);
+    }
+}
+
+static void scan_fat_types_in_stmts(StmtVec *body, Str *out, DeclVec *program, char **seen, int *seen_count);
+
+static void scan_fat_types_in_type(Type *t, Str *out, DeclVec *program, char **seen, int *seen_count) {
+    if (!t) return;
+    collect_fat_types(t, out, program, seen, seen_count);
+    if (t->inner) scan_fat_types_in_type(t->inner, out, program, seen, seen_count);
+}
+
+static void scan_fat_types_in_stmts(StmtVec *body, Str *out, DeclVec *program, char **seen, int *seen_count) {
+    for (int i = 0; i < body->count; i++) {
+        Stmt *s = body->items[i];
+        if (s->type) scan_fat_types_in_type(s->type, out, program, seen, seen_count);
+        if (s->body.count) scan_fat_types_in_stmts(&s->body, out, program, seen, seen_count);
+    }
+}
+
 char *emit_program(DeclVec program) {
     Str out = {0};
-    str_add(&out, "#include <stdint.h>\n#include <stddef.h>\n#include <stdio.h>\n#include <stdlib.h>\n#define TC_ALLOC(type, count) ((type *)calloc((count), sizeof(type)))\n#define lenof(x) (sizeof(x) / sizeof((x)[0]))\n\n");
+    str_add(&out, "#include <stdint.h>\n#include <stddef.h>\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n");
+    str_add(&out, "#define TC_ALLOC(type, count) ((type *)calloc((count), sizeof(type)))\n");
+    str_add(&out, "#define TC_LENOF(x) (sizeof(x) / sizeof((x)[0]))\n");
+    str_add(&out, "#define TC_FAT_LENOF(x) ((x).len)\n");
+    str_add(&out, "\n");
+    char *seen[64] = {0};
+    int seen_count = 0;
+    for (int i = 0; i < program.count; i++) {
+        Decl *d = program.items[i];
+        if (d->type) scan_fat_types_in_type(d->type, &out, &program, seen, &seen_count);
+        for (int j = 0; j < d->params.count; j++) scan_fat_types_in_type(d->params.items[j].type, &out, &program, seen, &seen_count);
+        if (d->body.count) scan_fat_types_in_stmts(&d->body, &out, &program, seen, &seen_count);
+    }
+    if (seen_count) str_add(&out, "\n");
     for (int i = 0; i < program.count; i++) {
         Decl *d = program.items[i];
         if (d->kind == DC_USE) {
@@ -154,7 +223,7 @@ char *emit_program(DeclVec program) {
     for (int i = 0; i < program.count; i++) {
         Decl *d = program.items[i];
         if (d->kind == DC_STRUCT) {
-            str_printf(&out, "struct %s {\n", d->name);
+            str_printf(&out, "struct __attribute__((packed)) %s {\n", d->name);
             for (int j = 0; j < d->params.count; j++) {
                 str_add(&out, "    "); emit_type(&out, d->params.items[j].type, d->params.items[j].name, &program); str_add(&out, ";\n");
             }
@@ -190,7 +259,7 @@ char *emit_program(DeclVec program) {
             if (!d->params.count) str_add(&out, "void");
             for (int j = 0; j < d->params.count; j++) { if (j) str_add(&out, ", "); emit_type(&out, d->params.items[j].type, d->params.items[j].name, &program); }
             str_add(&out, ") {\n");
-            emit_stmt_vec(&out, &d->body, &program, 1);
+            emit_stmt_vec_with_defers(&out, &d->body, &program, 1);
             str_add(&out, "}\n");
         }
     }

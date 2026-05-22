@@ -23,7 +23,19 @@ int main(int argc, char **argv) {
     TokenVec tokens = lex_source(source);
     DeclVec program = parse_program(tokens.items);
     char *c = emit_program(program);
-    if (output) write_file(output, c);
-    else fputs(c, stdout);
+    if (output) {
+        size_t olen = strlen(output);
+        bool is_header = (olen > 2 && !strcmp(output + olen - 2, ".h"));
+        if (is_header) {
+            Str wrapped = {0};
+            str_add(&wrapped, "#pragma once\n");
+            str_add(&wrapped, c);
+            write_file(output, wrapped.data);
+        } else {
+            write_file(output, c);
+        }
+    } else {
+        fputs(c, stdout);
+    }
     return 0;
 }

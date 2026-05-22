@@ -52,8 +52,16 @@ match(value){
     }
 }
 # pointers to structs
-
+[DONE]
 struct Node{
     i32 data
     ->Node next
 }
+
+# Pointers as arrays
+As commented by procedural
+> "Also, C allows not only dereferencing raw pointers, but treat them as arrays, for example "p->x" works, but "p[0].x" also works. This is useful for accessing array elements of a foreign pointer"
+
+I will implement this for ergonomics
+
+

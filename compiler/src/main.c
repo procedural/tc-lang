@@ -31,7 +31,27 @@ int main(int argc, char **argv) {
     const char *output = NULL;
     const char *compile_out = NULL;
     for (int i = 1; i < argc; i++) {
-        if (!strcmp(argv[i], "-c") || !strcmp(argv[i], "--compile")) {
+        if (!strcmp(argv[i], "--help") || !strcmp(argv[i], "-h")) {
+            puts("Tight-C compiler v1.0.0\n"
+                 "\n"
+                 "Usage: tcc <input.tc> [options]\n"
+                 "\n"
+                 "Options:\n"
+                 "  -o, --output <file>    Write transpiled C to file (.h gets #pragma once)\n"
+                 "  -c, --compile <name>   Compile to binary (auto-detects gcc/clang)\n"
+                 "  -h, --help             Show this help message\n"
+                 "  -v, --version          Show version\n"
+                 "\n"
+                 "Examples:\n"
+                 "  tcc main.tc -o main.c           Transpile to C\n"
+                 "  tcc main.tc -c app               Transpile + compile to binary\n"
+                 "  tcc main.tc -o main.c -c app     Keep .c and compile\n"
+                 "  tcc lib.tc -o lib.h               Emit as header\n");
+            return 0;
+        } else if (!strcmp(argv[i], "--version") || !strcmp(argv[i], "-v")) {
+            puts("tcc 1.0.0");
+            return 0;
+        } else if (!strcmp(argv[i], "-c") || !strcmp(argv[i], "--compile")) {
             if (++i >= argc) die("missing binary output path after -c");
             compile_out = argv[i];
         } else if (!strcmp(argv[i], "-o") || !strcmp(argv[i], "--output")) {
@@ -41,7 +61,7 @@ int main(int argc, char **argv) {
             input = argv[i];
         }
     }
-    if (!input) die("usage: tcc <input.tc> [-o output.c] [-c binary]");
+    if (!input) die("usage: tcc <input.tc> [-o output.c] [-c binary]\n       tcc --help for more info");
     char *source = read_file(input);
     tc_set_source(input, source);
     g_current_input = input;

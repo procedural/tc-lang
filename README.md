@@ -145,11 +145,27 @@ extern "C" {
 
 ### Error Reporting
 ```
-error: bare identifier 'w' is not a statement
- --> samples/syntaxe.tc:7:9
+error[E000]: cannot assign to pinned variable 'x'
+ --> samples/pin.tc:8:5
    |
- 7 |         w
-   |         ^ bare identifier 'w' is not a statement
+ 8 |     x = 11 // this should be illegal since x is pinned in this scope
+   |     ^ cannot assign to pinned variable 'x'
+
+E000
+Type "tcc --error E000" for help
+
+PS C:\Users\me\.projects\langs\tc> ./tcc --error E000
+E000: Assignment to pinned variable
+
+A variable marked with `pin` is immutable in the current scope.
+You cannot reassign it with `=`, `+=`, `-=`, or any other assignment.
+
+Bad:
+    i32 x = 10
+    pin x
+    x = 11       // error: cannot assign to pinned variable
+
+Fix: remove the `pin` or avoid reassigning the variable.
 ```
 
 ## Types

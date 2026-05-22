@@ -1,33 +1,14 @@
 use "stdlib/io.tc"
 use "stdlib/conv.tc"
 /*
-=>-> just means char*[], a slice of pointers to u8
+=>-> just means char*[], a slice (array) of pointers to u8
 */
 i8 fn main: =>->u8 args { 
     if(args.len == 0) {
         print("no input")
     }
-    if(args[1] == "help"){
-        print("usage: args <command>")
+    if(args.ptr[1] == "help"){
+        print("usage: args <command>\n args: add, sub, mul, div")
     }
 
-    //simple calculator
-
-    if(args[1] == "sum"){
-        if(args.len < 4) {
-            print("usage: args sum <num1> <num2>")
-            return 1
-        }
-        ->i8 arg2 = args[2]
-        ->i8 arg3 = args[3]
-
-        i64 x = stoi(arg2)
-        i64 y = stoi(arg3)
-
-        i64 sum = x + y
-
-        ->i8 result = itos(sum)
-        print(result)
-        
-    }
 }

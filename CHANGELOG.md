@@ -1,6 +1,7 @@
 ## v1.1.0 2026-05-22
 
 Added:
+- enforced pin comptime error display
 - added version and help arguments to compiler cli
     - Documentation files
     - Changelog file

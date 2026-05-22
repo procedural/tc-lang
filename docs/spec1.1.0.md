@@ -74,3 +74,6 @@ Proposed change
 
 }
 
+# Better error reporting
+For version 1.0.0 we had rust like error reporting in the CLI, for version 1.1 we are adding version clalssification spec file
+and built in explainations in the compiler. Rust styled.

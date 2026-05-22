@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
     const char *compile_out = NULL;
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "--help") || !strcmp(argv[i], "-h")) {
-            puts("Tight-C compiler v1.0.0\n"
+            puts("Tight-C compiler v1.1.0\n"
                  "\n"
                  "Usage: tcc <input.tc> [options]\n"
                  "\n"
@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
                  "  tcc lib.tc -o lib.h               Emit as header\n");
             return 0;
         } else if (!strcmp(argv[i], "--version") || !strcmp(argv[i], "-v")) {
-            puts("tcc 1.0.0");
+            puts("tcc 1.1.0");
             return 0;
         } else if (!strcmp(argv[i], "-c") || !strcmp(argv[i], "--compile")) {
             if (++i >= argc) die("missing binary output path after -c");

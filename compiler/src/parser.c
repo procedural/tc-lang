@@ -13,6 +13,9 @@ typedef struct {
     char **structs;
     int struct_count;
     int struct_cap;
+    char **pinned;
+    int pin_count;
+    int pin_cap;
 } Parser;
 
 static Token *cur(Parser *p) { return &p->tokens[p->pos]; }
@@ -254,6 +257,11 @@ static Stmt *parse_stmt(Parser *p) {
     if (match(p, "pin")) {
         Stmt *s = new_stmt(ST_PIN);
         s->name = expect_ident(p);
+        if (p->pin_count >= p->pin_cap) {
+            p->pin_cap = p->pin_cap ? p->pin_cap * 2 : 8;
+            p->pinned = xrealloc(p->pinned, (size_t)p->pin_cap * sizeof(char *));
+        }
+        p->pinned[p->pin_count++] = s->name;
         return s;
     }
     if (match(p, "{")) {
@@ -276,6 +284,19 @@ static Stmt *parse_stmt(Parser *p) {
     p->pos = mark;
     Stmt *s = new_stmt(ST_EXPR);
     s->expr = parse_expr(p);
+    if (s->expr->kind == EX_BINARY && is_assignment(s->expr->text) && s->expr->left) {
+        const char *target = NULL;
+        if (s->expr->left->kind == EX_NAME) target = s->expr->left->text;
+        if (target) {
+            for (int pi = 0; pi < p->pin_count; pi++) {
+                if (!strcmp(p->pinned[pi], target)) {
+                    Token *t = &p->tokens[mark];
+                    tc_error(t->line, t->col, (int)strlen(target),
+                        "cannot assign to pinned variable '%s'", target);
+                }
+            }
+        }
+    }
     if (s->expr->kind == EX_NAME) {
         Token *t = &p->tokens[mark];
         tc_error(t->line, t->col, (int)strlen(t->text),
@@ -309,6 +330,7 @@ static Decl *parse_fn(Parser *p, DeclKind kind, bool public, Type *ret) {
         param_push(&d->params, pt, pn);
         if (!match(p, ",")) break;
     }
+    p->pin_count = 0;
     d->body = parse_block(p);
     return d;
 }

@@ -1,0 +1,10 @@
+use "stdlib/io.tc"
+
+i8 fn main: =>->u8 args {
+    if(args.len == 0) {
+        print("no input")
+    }
+    if(args[1] == "help"){
+        print("usage: args <command>")
+    }
+}

@@ -233,11 +233,16 @@ char *emit_program(DeclVec program) {
     for (int i = 0; i < program.count; i++) {
         Decl *d = program.items[i];
         if (d->kind == DC_FN) {
-            emit_type(&out, d->type, d->name, &program); str_add(&out, "(");
-            if (!d->params.count && !d->varargs) str_add(&out, "void");
-            for (int j = 0; j < d->params.count; j++) { if (j) str_add(&out, ", "); emit_type(&out, d->params.items[j].type, d->params.items[j].name, &program); }
-            if (d->varargs) str_add(&out, d->params.count ? ", ..." : "...");
-            str_add(&out, ");\n");
+            bool is_main_args = (strcmp(d->name, "main") == 0 && d->params.count == 1 && d->params.items[0].type->kind == TY_FATPTR);
+            if (is_main_args) {
+                str_add(&out, "int32_t main(int argc, char **argv);\n");
+            } else {
+                emit_type(&out, d->type, d->name, &program); str_add(&out, "(");
+                if (!d->params.count && !d->varargs) str_add(&out, "void");
+                for (int j = 0; j < d->params.count; j++) { if (j) str_add(&out, ", "); emit_type(&out, d->params.items[j].type, d->params.items[j].name, &program); }
+                if (d->varargs) str_add(&out, d->params.count ? ", ..." : "...");
+                str_add(&out, ");\n");
+            }
         }
     }
     str_add(&out, "\n");
@@ -255,10 +260,16 @@ char *emit_program(DeclVec program) {
     for (int i = 0; i < program.count; i++) {
         Decl *d = program.items[i];
         if (d->kind == DC_FN) {
-            str_add(&out, "\n"); emit_type(&out, d->type, d->name, &program); str_add(&out, "(");
-            if (!d->params.count) str_add(&out, "void");
-            for (int j = 0; j < d->params.count; j++) { if (j) str_add(&out, ", "); emit_type(&out, d->params.items[j].type, d->params.items[j].name, &program); }
-            str_add(&out, ") {\n");
+            bool is_main_args = (strcmp(d->name, "main") == 0 && d->params.count == 1 && d->params.items[0].type->kind == TY_FATPTR);
+            if (is_main_args) {
+                str_add(&out, "\nint32_t main(int argc, char **argv) {\n");
+                str_printf(&out, "    tc_fat_ptr %s = { .ptr = argv, .len = (size_t)argc };\n", d->params.items[0].name);
+            } else {
+                str_add(&out, "\n"); emit_type(&out, d->type, d->name, &program); str_add(&out, "(");
+                if (!d->params.count) str_add(&out, "void");
+                for (int j = 0; j < d->params.count; j++) { if (j) str_add(&out, ", "); emit_type(&out, d->params.items[j].type, d->params.items[j].name, &program); }
+                str_add(&out, ") {\n");
+            }
             emit_stmt_vec_with_defers(&out, &d->body, &program, 1);
             str_add(&out, "}\n");
         }

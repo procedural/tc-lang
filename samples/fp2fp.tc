@@ -1,0 +1,26 @@
+// fat pointer to a fat pointer
+use "stdlib/io.tc"
+
+void fn main: {
+    u8[5] arr = {1,2,3,4,5}
+    =>u8 fp = @arr
+
+    if (fp.len > 0){
+        print("fp.len > 0")
+    }  
+    //elements of the array
+    loop if(i > fp.len){
+        //print element
+        printi(fp.ptr[i])
+        i += 1
+    }
+
+    // fat pointer to a fat pointer
+    /*
+    since the fat pointer is just an array slice, a fat pointer of fat pointer is an array of slices
+    */
+    =>=>u8 fp2fp = @fp
+
+    i32 value = =>=>fp2fp[0]
+    printi(value)
+}

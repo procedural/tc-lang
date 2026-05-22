@@ -1,0 +1,12 @@
+use "stdlib/io.tc"
+
+i32 fn main: =>->i8 args {
+    printi(args.len)
+    print("arguments:")
+    i32 i = 0
+    loop if (i < args.len) {
+        print(args.ptr[i])
+        i += 1
+    }
+    ret 0
+}

@@ -51,3 +51,9 @@ match(value){
         print("other")
     }
 }
+# pointers to structs
+
+struct Node{
+    i32 data
+    ->Node next
+}

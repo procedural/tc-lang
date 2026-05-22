@@ -1,0 +1,26 @@
+use "stdlib/io.tc"
+
+struct Point {
+    i32 x,
+    i32 y
+}
+
+void fn set_point: ->Point p, i32 x, i32 y {
+    (->p).x = x
+    (->p).y = y
+}
+
+void fn main: {
+    Point p
+    set_point(@p, 10, 20)
+    printi(p.x)
+    printi(p.y)
+
+    ->Point ptr = @p
+    printi((->ptr).x)
+
+    ->Point heap = alloc(Point, 1)
+    (->heap).x = 99
+    printi((->heap).x)
+    defer { free(heap) }
+}

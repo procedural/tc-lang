@@ -36,6 +36,10 @@ A: We follow a "no implicit" philosophy (although we could arrive at some except
 Q: Do you know how to code in any language?
 A: I have most experience with C and some C++, and i've tinkered with Rust and Python but I am most comfortable around C
 
+Q: Will you implement concurrency?
+A: My idea for concurrency is this (similar in spirit to Pony):
+    - Data is owned by only one thread at a time, no shared mutable states. It sounds extreme, but this is the simplest way i can understand to avoid race conditions. Therefore data is lent from one thread to another via some explicit operator, the data given (not borrowed) is dead on the main scope and cannot be reused. I havent implemented this on tC, and I am not sure if I ever will.
+
 Q: Do you use AI?
 A: I'll be honest, yes, a lot. But as a speed boost. There is no honor unlike handcoding everything. I am not a very seasoned dev yet. I know it has less merit. But my philosophy is to use modern tools for modern problems.
 
@@ -56,3 +60,5 @@ A: I'll add them for 1.1
 
 Q: Where are you from?
 A: Mexico
+
+Suggestions and feedback (even if harsh) welcome on issues

@@ -96,7 +96,7 @@ static Expr *parse_primary(Parser *p) {
     }
     if (t->kind == TOK_IDENT || t->kind == TOK_KEYWORD) {
         p->pos++;
-        if (match(p, "(")) {
+        if (at(p, "(") && cur(p)->line == t->line && match(p, "(")) {
             Expr *e = new_expr(EX_CALL);
             e->text = t->text;
             bool is_builtin = !strcmp(t->text, "cast") || !strcmp(t->text, "alloc") || !strcmp(t->text, "sizeof");
